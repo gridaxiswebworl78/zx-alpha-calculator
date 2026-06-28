@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZX Alpha - Dynamic Leverage Sizing Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy-900: #0a1124;
+    --navy-800: #0f1a33;
+    --navy-700: #16223f;
+    --navy-600: #1e2d4f;
+    --gold: #e6b94c;
+    --gold-soft: #f3d287;
+    --orange: #ff7a18;
+    --orange-glow: rgba(255, 122, 24, 0.35);
+    --white: #f5f8ff;
+    --slate: #8a98b8;
+    --slate-dark: #5a6party;
+    --border: rgba(230, 185, 76, 0.14);
+    --red: #ff5466;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(255,122,24,0.10), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(230,185,76,0.08), transparent 45%),
+      linear-gradient(160deg, #060b18 0%, #0a1124 55%, #0c1530 100%);
+    padding: 24px;
+    color: var(--white);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .terminal {
+    width: 100%;
+    max-width: 440px;
+    background: linear-gradient(180deg, var(--navy-800), var(--navy-900));
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 34px 32px 30px;
+    box-shadow:
+      0 40px 80px -30px rgba(0,0,0,0.8),
+      0 0 0 1px rgba(255,255,255,0.02) inset;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .terminal::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--orange), var(--gold));
+    opacity: 0.85;
+  }
+
+  /* Header */
+  .header { margin-bottom: 28px; }
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 14px;
+  }
+
+  .logo-mark {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--gold), var(--orange));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--navy-900);
+    letter-spacing: -1px;
+    box-shadow: 0 6px 18px -4px var(--orange-glow);
+  }
+
+  .brand-text .ticker {
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--slate);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .brand-text .name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: -0.2px;
+  }
+
+  h1 {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    line-height: 1.25;
+    background: linear-gradient(90deg, #ffffff, #d9e2f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: var(--slate);
+    font-weight: 400;
+  }
+  .subtitle .by {
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  /* Inputs */
+  .field { margin-bottom: 17px; }
+
+  .field label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--slate);
+    margin-bottom: 8px;
+  }
+
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-wrap .affix {
+    position: absolute;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gold);
+    pointer-events: none;
+  }
+  .input-wrap .affix.left { left: 16px; }
+  .input-wrap .affix.right { right: 16px; }
+
+  .field input {
+    width: 100%;
+    background: var(--navy-700);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 14px 16px 14px 32px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--white);
+    transition: all 0.22s ease;
+    outline: none;
+  }
+  .field.right-affix input { padding: 14px 38px 14px 16px; }
+
+  .field input::placeholder { color: var(--slate-dark); font-weight: 400; }
+
+  .field input:hover { border-color: rgba(230,185,76,0.3); }
+  .field input:focus {
+    border-color: var(--gold);
+    background: var(--navy-600);
+    box-shadow: 0 0 0 3px rgba(230,185,76,0.12);
+  }
+
+  /* Button */
+  .btn {
+    width: 100%;
+    margin-top: 6px;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--navy-900);
+    background: linear-gradient(135deg, var(--gold-soft), var(--gold) 45%, var(--orange));
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.25s ease, filter 0.2s ease;
+    box-shadow: 0 10px 26px -8px var(--orange-glow);
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+    box-shadow: 0 16px 34px -8px var(--orange-glow);
+  }
+  .btn:active { transform: translateY(0); }
+
+  /* Results */
+  .results {
+    margin-top: 24px;
+    display: grid;
+    gap: 14px;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.4s ease, max-height 0.45s ease, margin-top 0.4s ease;
+  }
+  .results.show { opacity: 1; max-height: 320px; }
+
+  .result-card {
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .result-card .meta .r-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 600;
+    color: var(--slate);
+  }
+  .result-card .meta .r-sub {
+    font-size: 11.5px;
+    color: var(--slate-dark);
+    margin-top: 3px;
+  }
+  .result-card .r-value {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .result-card .r-value span { font-size: 15px; font-weight: 600; opacity: 0.7; }
+
+  .card-exact {
+    background: linear-gradient(135deg, var(--navy-700), var(--navy-800));
+  }
+  .card-exact .r-value { color: var(--gold-soft); }
+
+  .card-safe {
+    background: linear-gradient(135deg, rgba(255,122,24,0.10), rgba(255,122,24,0.03));
+    border-color: rgba(255,122,24,0.25);
+  }
+  .card-safe .r-value { color: var(--orange); }
+  .card-safe .meta .r-label { color: var(--gold); }
+
+  /* Error */
+  .error-msg {
+    margin-top: 18px;
+    padding: 13px 16px;
+    border-radius: 11px;
+    background: rgba(255,84,102,0.10);
+    border: 1px solid rgba(255,84,102,0.3);
+    color: #ff8a96;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  .footer-note {
+    margin-top: 22px;
+    text-align: center;
+    font-size: 10.5px;
+    letter-spacing: 0.8px;
+    color: var(--slate-dark);
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <div class="terminal">
+    <div class="header">
+      <div class="brand-row">
+        <div class="logo-mark">ZX</div>
+        <div class="brand-text">
+          <div class="ticker">ZX ALPHA · TERMINAL</div>
+          <div class="name">Leverage Engine</div>
+        </div>
+      </div>
+      <h1>Dynamic Leverage Sizing Calculator</h1>
+      <p class="subtitle">Precision position sizing &middot; <span class="by">by Grid Axis Art</span></p>
+    </div>
+
+    <div class="field">
+      <label for="risk">Risk Amount</label>
+      <div class="input-wrap">
+        <span class="affix left">$</span>
+        <input type="number" id="risk" inputmode="decimal" placeholder="e.g. 50" min="0" step="any">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="margin">Margin / Position Size</label>
+      <div class="input-wrap">
+        <span class="affix left">$</span>
+        <input type="number" id="margin" inputmode="decimal" placeholder="e.g. 200" min="0" step="any">
+      </div>
+    </div>
+
+    <div class="field right-affix">
+      <label for="stop">Stop Loss</label>
+      <div class="input-wrap">
+        <input type="number" id="stop" inputmode="decimal" placeholder="e.g. 2.5" min="0" step="any" autofocus>
+        <span class="affix right">%</span>
+      </div>
+    </div>
+
+    <button class="btn" id="calcBtn">Calculate Position</button>
+
+    <div class="error-msg" id="error">⚠ Invalid Input — please enter positive numbers in all fields.</div>
+
+    <div class="results" id="results">
+      <div class="result-card card-exact">
+        <div class="meta">
+          <div class="r-label">Exact Leverage</div>
+          <div class="r-sub">Theoretical requirement</div>
+        </div>
+        <div class="r-value" id="exactVal">0.00<span>x</span></div>
+      </div>
+      <div class="result-card card-safe">
+        <div class="meta">
+          <div class="r-label">Safe Trade Setup</div>
+          <div class="r-sub">Rounded down · risk protected</div>
+        </div>
+        <div class="r-value" id="safeVal">0<span>x</span></div>
+      </div>
+    </div>
+
+    <div class="footer-note">Grid Axis Art · Institutional Tools</div>
+  </div>
+
+<script>
+  (function () {
+    const riskEl   = document.getElementById('risk');
+    const marginEl = document.getElementById('margin');
+    const stopEl   = document.getElementById('stop');
+    const calcBtn  = document.getElementById('calcBtn');
+    const results  = document.getElementById('results');
+    const errorBox = document.getElementById('error');
+    const exactVal = document.getElementById('exactVal');
+    const safeVal  = document.getElementById('safeVal');
+
+    const LS_RISK   = 'zxalpha_risk';
+    const LS_MARGIN = 'zxalpha_margin';
+
+    /* ---- Load saved Risk & Margin ---- */
+    function loadSaved() {
+      const r = localStorage.getItem(LS_RISK);
+      const m = localStorage.getItem(LS_MARGIN);
+      if (r !== null) riskEl.value = r;
+      if (m !== null) marginEl.value = m;
+    }
+
+    /* ---- Persist Risk & Margin ---- */
+    riskEl.addEventListener('input', () => localStorage.setItem(LS_RISK, riskEl.value));
+    marginEl.addEventListener('input', () => localStorage.setItem(LS_MARGIN, marginEl.value));
+
+    function showError() {
+      results.classList.remove('show');
+      errorBox.classList.add('show');
+    }
+
+    function calculate() {
+      const risk   = parseFloat(riskEl.value);
+      const margin = parseFloat(marginEl.value);
+      const stop   = parseFloat(stopEl.value);
+
+      // Validation: must be valid, positive, non-zero where required
+      const invalid =
+        isNaN(risk)   || risk   <= 0 ||
+        isNaN(margin) || margin <= 0 ||
+        isNaN(stop)   || stop   <= 0;
+
+      if (invalid) {
+        showError();
+        return;
+      }
+
+      // Exact Leverage = Risk / (Margin * (StopLoss / 100))
+      const exact = risk / (margin * (stop / 100));
+
+      if (!isFinite(exact) || exact <= 0) {
+        showError();
+        return;
+      }
+
+      const safe = Math.floor(exact);
+
+      errorBox.classList.remove('show');
+      exactVal.innerHTML = exact.toFixed(2) + '<span>x</span>';
+      safeVal.innerHTML  = safe + '<span>x</span>';
+      results.classList.add('show');
+    }
+
+    calcBtn.addEventListener('click', calculate);
+
+    // Trigger on Enter inside Stop Loss field
+    stopEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        calculate();
+      }
+    });
+
+    // Init
+    loadSaved();
+    window.addEventListener('load', () => stopEl.focus());
+  })();
+</script>
+</body>
+</html>
